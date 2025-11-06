@@ -110,6 +110,21 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-image: url("/public/img/HackRadarBG.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #000;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -117,4 +132,15 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* index.css */
+.gradient-text {
+  background: linear-gradient(
+    90deg,
+    #62ed05,
+    #bce80c
+  ); /* your gradient colors */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
