@@ -1,25 +1,14 @@
-import "./index.css";
-import { Button } from "@/components/ui/button";
-import NavBar from "@/components/ui/navbar";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 
-export default function App() {
+function App() {
   return (
-    <div className="w-screen h-screen flex flex-col relative justify-center items-center gap-7 ">
-      <NavBar />
-      <h1 className="gradient-text text-9xl font-bold">HackRadar</h1>
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="inset-0 w-1/3 h-1/3 object-cover"
-      >
-        <source src="/public/videos/HackRadarGIF.webm" type="video/webm" />
-      </video>
-
-      <Button size="lg" className="text-2xl">
-        Get Started
-      </Button>
-    </div>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+    </Routes>
   );
 }
+
+export default App;
