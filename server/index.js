@@ -13,6 +13,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// simple request logger for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} from ${req.ip}`);
+  next();
+});
+console.log({
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT,
+  DB_USER: process.env.DB_USER,
+  DB_NAME: process.env.DB_NAME
+});
+
 // Healthcheck
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, message: 'HackRadar API is running' });
