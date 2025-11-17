@@ -15,7 +15,7 @@ export default function Home() {
         playsInline
         className="inset-0 w-1/3 h-1/3 object-cover"
       >
-        <source src="/public/videos/HackRadarGIF.webm" type="video/webm" />
+        <source src="/videos/HackRadarGIF.webm" type="video/webm" />
       </video>
 
       <Button asChild size="lg" className="text-2xl">

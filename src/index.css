@@ -117,7 +117,7 @@ body {
   justify-content: center;
   align-items: center;
 
-  background-image: url("/public/img/HackRadarBG.jpg");
+  background-image: url("/img/HackRadarBG.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
