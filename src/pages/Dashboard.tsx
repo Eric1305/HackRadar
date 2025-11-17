@@ -1,3 +1,5 @@
+"use client";
+
 import "@/index.css";
 import {
   Table,
@@ -9,17 +11,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import NavBar from "@/components/navbar";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
-  const hackathons = [
-    {
-      name: "RowdyHacks",
-      format: "in-person",
-      location: "Texas",
-      start_date: "2025-10-25",
-      end_date: "2025-10-26",
-    },
-  ];
+  const [hackathons, setHackathons] = useState<Hackathon[]>([]);
+  type Hackathon = {
+    id: number;
+    name: string;
+    state_region: string;
+    start_date: string;
+    end_date: string;
+  };
+
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("http://localhost:4000/api/hackathons");
+      const data = await res.json();
+      setHackathons(data);
+    }
+
+    load();
+  }, []);
   return (
     <section>
       <NavBar />
@@ -29,27 +41,25 @@ export default function Dashboard() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">Hackathon</TableHead>
-              <TableHead>Format</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Start Date</TableHead>
-              <TableHead className="text-right">End Date</TableHead>
+              <TableHead>End Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {hackathons.map((hackathon) => (
-              <TableRow key={hackathon.name}>
+              <TableRow key={hackathon.id}>
                 <TableCell className="font-medium text-white">
                   {hackathon.name}
                 </TableCell>
-                <TableCell className="text-white">{hackathon.format}</TableCell>
                 <TableCell className="text-white">
-                  {hackathon.location}
+                  {hackathon.state_region ? hackathon.state_region : "Virtual"}
                 </TableCell>
                 <TableCell className="text-white">
-                  {hackathon.start_date}
+                  {hackathon.start_date.slice(0, 10)}
                 </TableCell>
                 <TableCell className="text-right text-white">
-                  {hackathon.end_date}
+                  {hackathon.end_date.slice(0, 10)}
                 </TableCell>
               </TableRow>
             ))}
