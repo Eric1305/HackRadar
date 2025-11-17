@@ -7,7 +7,14 @@ export default function NavBar() {
       <Link to="/">
         <h1 className="text-2xl gradient-text">HackRadar</h1>
       </Link>
-      <Button>Sign Up</Button>
+      <div className="flex gap-4">
+        <Link to="/dashboard">
+          <Button className="cursor-pointer">Dashboard</Button>
+        </Link>
+        <Link to="/login">
+          <Button className="cursor-pointer">Login</Button>
+        </Link>
+      </div>
     </nav>
   );
 }
