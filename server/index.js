@@ -22,6 +22,7 @@ app.use((req, res, next) => {
   );
   next();
 });
+
 console.log({
   DB_HOST: process.env.DB_HOST,
   DB_PORT: process.env.DB_PORT,
@@ -29,12 +30,96 @@ console.log({
   DB_NAME: process.env.DB_NAME,
 });
 
+// -----------------------------------------------------
 // Healthcheck
+// -----------------------------------------------------
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "HackRadar API is running" });
 });
 
-// All hackathons
+// -----------------------------------------------------
+// Auth: Sign Up
+// -----------------------------------------------------
+app.post("/api/auth/signup", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ error: "Email and password are required" });
+  }
+
+  try {
+    // Check if user already exists
+    const [existing] = await pool.query(
+      "SELECT user_id FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+
+    // Insert new user (plain-text password for demo purposes)
+    const [result] = await pool.query(
+      "INSERT INTO users (email, password) VALUES (?, ?)",
+      [email, password]
+    );
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      user_id: result.insertId,
+      email,
+    });
+  } catch (err) {
+    console.error("Error in /api/auth/signup:", err);
+    return res.status(500).json({ error: "Failed to register user" });
+  }
+});
+
+// -----------------------------------------------------
+// Auth: Login
+// -----------------------------------------------------
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ error: "Email and password are required" });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT user_id, email, password FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const user = rows[0];
+
+    // Plain-text comparison (fine for class project demo)
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    return res.json({
+      message: "Login successful",
+      user_id: user.user_id,
+      email: user.email,
+    });
+  } catch (err) {
+    console.error("Error in /api/auth/login:", err);
+    return res.status(500).json({ error: "Failed to log in" });
+  }
+});
+
+// -----------------------------------------------------
+// All hackathons (basic list)
+// -----------------------------------------------------
 app.get("/api/hackathons", async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -46,7 +131,9 @@ app.get("/api/hackathons", async (req, res) => {
          h.timezone,
          v.city,
          v.state_region,
-         v.country
+         v.country,
+         v.latitude,
+         v.longitude
        FROM hackathons h
        LEFT JOIN venues v ON h.venue_id = v.venue_id
        ORDER BY h.start_date;`
@@ -58,7 +145,9 @@ app.get("/api/hackathons", async (req, res) => {
   }
 });
 
-// Search and Filter Hackathons
+// -----------------------------------------------------
+// Search and Filter Hackathons (with pagination)
+// -----------------------------------------------------
 app.get("/api/hackathons/search", async (req, res) => {
   try {
     const {
@@ -72,7 +161,6 @@ app.get("/api/hackathons/search", async (req, res) => {
       limit = 20,
     } = req.query;
 
-    // Build WHERE clause dynamically
     let whereConditions = [];
     let queryParams = [];
 
@@ -90,7 +178,7 @@ app.get("/api/hackathons/search", async (req, res) => {
       );
     }
 
-    // State filter - handles multiple states
+    // State filter
     if (state && state.trim() !== "") {
       const states = state.split(",").map((s) => s.trim());
       const placeholders = states.map(() => "?").join(",");
@@ -98,7 +186,7 @@ app.get("/api/hackathons/search", async (req, res) => {
       queryParams.push(...states);
     }
 
-    // Country filter - handles multiple countries
+    // Country filter
     if (country && country.trim() !== "") {
       const countries = country.split(",").map((c) => c.trim());
       const placeholders = countries.map(() => "?").join(",");
@@ -125,16 +213,14 @@ app.get("/api/hackathons/search", async (req, res) => {
       queryParams.push(endDate);
     }
 
-    // Construct WHERE clause
     const whereClause =
       whereConditions.length > 0
         ? `WHERE ${whereConditions.join(" AND ")}`
         : "";
 
-    // Calculate pagination
     const offset = (Number(page) - 1) * Number(limit);
 
-    // Get total count for pagination
+    // Total count
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM hackathons h
@@ -144,7 +230,7 @@ app.get("/api/hackathons/search", async (req, res) => {
     const [countResult] = await pool.query(countQuery, queryParams);
     const totalRecords = countResult[0].total;
 
-    // Get paginated results
+    // Data query (include lat/long)
     const dataQuery = `
       SELECT 
         h.hackathon_id,
@@ -154,7 +240,9 @@ app.get("/api/hackathons/search", async (req, res) => {
         h.timezone,
         v.city,
         v.state_region,
-        v.country
+        v.country,
+        v.latitude,
+        v.longitude
       FROM hackathons h
       LEFT JOIN venues v ON h.venue_id = v.venue_id
       ${whereClause}
@@ -168,7 +256,6 @@ app.get("/api/hackathons/search", async (req, res) => {
       offset,
     ]);
 
-    // Return results with pagination metadata
     res.json({
       data: rows,
       pagination: {
@@ -187,10 +274,11 @@ app.get("/api/hackathons/search", async (req, res) => {
   }
 });
 
-// Get filter options (for populating filter dropdowns)
+// -----------------------------------------------------
+// Get filter options (for dropdowns)
+// -----------------------------------------------------
 app.get("/api/filters", async (req, res) => {
   try {
-    // Get distinct states
     const [states] = await pool.query(
       `SELECT DISTINCT state_region 
        FROM venues 
@@ -198,7 +286,6 @@ app.get("/api/filters", async (req, res) => {
        ORDER BY state_region`
     );
 
-    // Get distinct countries
     const [countries] = await pool.query(
       `SELECT DISTINCT country 
        FROM venues 
@@ -206,7 +293,6 @@ app.get("/api/filters", async (req, res) => {
        ORDER BY country`
     );
 
-    // Get distinct cities
     const [cities] = await pool.query(
       `SELECT DISTINCT city 
        FROM venues 
@@ -228,7 +314,9 @@ app.get("/api/filters", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
 // Hackathons filtered by state
+// -----------------------------------------------------
 app.get("/api/hackathons/state/:state", async (req, res) => {
   const { state } = req.params;
   try {
@@ -241,7 +329,9 @@ app.get("/api/hackathons/state/:state", async (req, res) => {
          h.timezone,
          v.city,
          v.state_region,
-         v.country
+         v.country,
+         v.latitude,
+         v.longitude
        FROM hackathons h
        JOIN venues v ON h.venue_id = v.venue_id
        WHERE v.state_region = ?
@@ -255,6 +345,9 @@ app.get("/api/hackathons/state/:state", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
+// Start server
+// -----------------------------------------------------
 app.listen(PORT, () => {
   console.log(`HackRadar API running on http://localhost:${PORT}`);
 });
