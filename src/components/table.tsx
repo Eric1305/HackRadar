@@ -8,31 +8,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useEffect, useState } from "react";
 
-export default function Dashboard() {
-  const [hackathons, setHackathons] = useState<Hackathon[]>([]);
-  type Hackathon = {
-    id: number;
-    name: string;
-    state_region: string;
-    start_date: string;
-    end_date: string;
-  };
+type Hackathon = {
+  hackathon_id?: number;
+  id?: number;
+  name: string;
+  state_region: string;
+  start_date: string;
+  end_date: string;
+};
 
-  useEffect(() => {
-    async function load() {
-      const res = await fetch("http://localhost:4000/api/hackathons");
-      const data = await res.json();
-      setHackathons(data);
-    }
+interface HackathonTableProps {
+  data?: Hackathon[];
+  loading?: boolean;
+}
 
-    load();
-  }, []);
+export default function HackathonTable({
+  data = [],
+  loading = false,
+}: HackathonTableProps) {
   return (
-    <div className="dark bg-black p-5 rounded-2xl">
+    <div className="dark bg-black p-5 rounded-2xl min-h-[400px]">
       <Table>
-        <TableCaption>A list of Hackathons</TableCaption>
+        <TableCaption>
+          {loading
+            ? "Loading hackathons..."
+            : `A list of ${data.length} Hackathons`}
+        </TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[100px]">Hackathon</TableHead>
@@ -42,22 +44,39 @@ export default function Dashboard() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {hackathons.map((hackathon) => (
-            <TableRow key={hackathon.id}>
-              <TableCell className="font-medium text-white">
-                {hackathon.name}
-              </TableCell>
-              <TableCell className="text-white">
-                {hackathon.state_region ? hackathon.state_region : "Virtual"}
-              </TableCell>
-              <TableCell className="text-white">
-                {hackathon.start_date.slice(0, 10)}
-              </TableCell>
-              <TableCell className="text-right text-white">
-                {hackathon.end_date.slice(0, 10)}
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center text-white py-8">
+                <div className="flex justify-center items-center gap-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  Loading...
+                </div>
               </TableCell>
             </TableRow>
-          ))}
+          ) : data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center text-white py-8">
+                No hackathons found. Try adjusting your search or filters.
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((hackathon) => (
+              <TableRow key={hackathon.hackathon_id || hackathon.id}>
+                <TableCell className="font-medium text-white">
+                  {hackathon.name}
+                </TableCell>
+                <TableCell className="text-white">
+                  {hackathon.state_region ? hackathon.state_region : "Virtual"}
+                </TableCell>
+                <TableCell className="text-white">
+                  {hackathon.start_date.slice(0, 10)}
+                </TableCell>
+                <TableCell className="text-right text-white">
+                  {hackathon.end_date.slice(0, 10)}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

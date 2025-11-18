@@ -1,37 +1,41 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import pool from './db.js';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import pool from "./db.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 app.use(express.json());
 
 // simple request logger for debugging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} from ${req.ip}`);
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.url} from ${req.ip}`
+  );
   next();
 });
 console.log({
   DB_HOST: process.env.DB_HOST,
   DB_PORT: process.env.DB_PORT,
   DB_USER: process.env.DB_USER,
-  DB_NAME: process.env.DB_NAME
+  DB_NAME: process.env.DB_NAME,
 });
 
 // Healthcheck
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, message: 'HackRadar API is running' });
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, message: "HackRadar API is running" });
 });
 
 // All hackathons
-app.get('/api/hackathons', async (req, res) => {
+app.get("/api/hackathons", async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT 
@@ -49,13 +53,183 @@ app.get('/api/hackathons', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching hackathons:', err);
-    res.status(500).json({ error: 'Failed to fetch hackathons' });
+    console.error("Error fetching hackathons:", err);
+    res.status(500).json({ error: "Failed to fetch hackathons" });
+  }
+});
+
+// Search and Filter Hackathons
+app.get("/api/hackathons/search", async (req, res) => {
+  try {
+    const {
+      search = "",
+      state = "",
+      country = "",
+      city = "",
+      startDate = "",
+      endDate = "",
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    // Build WHERE clause dynamically
+    let whereConditions = [];
+    let queryParams = [];
+
+    // Search term - searches across hackathon name, city, state, country
+    if (search && search.trim() !== "") {
+      whereConditions.push(
+        "(h.name LIKE ? OR v.city LIKE ? OR v.state_region LIKE ? OR v.country LIKE ?)"
+      );
+      const searchPattern = `%${search}%`;
+      queryParams.push(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern
+      );
+    }
+
+    // State filter - handles multiple states
+    if (state && state.trim() !== "") {
+      const states = state.split(",").map((s) => s.trim());
+      const placeholders = states.map(() => "?").join(",");
+      whereConditions.push(`v.state_region IN (${placeholders})`);
+      queryParams.push(...states);
+    }
+
+    // Country filter - handles multiple countries
+    if (country && country.trim() !== "") {
+      const countries = country.split(",").map((c) => c.trim());
+      const placeholders = countries.map(() => "?").join(",");
+      whereConditions.push(`v.country IN (${placeholders})`);
+      queryParams.push(...countries);
+    }
+
+    // City filter
+    if (city && city.trim() !== "") {
+      const cities = city.split(",").map((c) => c.trim());
+      const placeholders = cities.map(() => "?").join(",");
+      whereConditions.push(`v.city IN (${placeholders})`);
+      queryParams.push(...cities);
+    }
+
+    // Date range filters
+    if (startDate && startDate.trim() !== "") {
+      whereConditions.push("h.start_date >= ?");
+      queryParams.push(startDate);
+    }
+
+    if (endDate && endDate.trim() !== "") {
+      whereConditions.push("h.end_date <= ?");
+      queryParams.push(endDate);
+    }
+
+    // Construct WHERE clause
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
+
+    // Calculate pagination
+    const offset = (Number(page) - 1) * Number(limit);
+
+    // Get total count for pagination
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM hackathons h
+      LEFT JOIN venues v ON h.venue_id = v.venue_id
+      ${whereClause}
+    `;
+    const [countResult] = await pool.query(countQuery, queryParams);
+    const totalRecords = countResult[0].total;
+
+    // Get paginated results
+    const dataQuery = `
+      SELECT 
+        h.hackathon_id,
+        h.name,
+        h.start_date,
+        h.end_date,
+        h.timezone,
+        v.city,
+        v.state_region,
+        v.country
+      FROM hackathons h
+      LEFT JOIN venues v ON h.venue_id = v.venue_id
+      ${whereClause}
+      ORDER BY h.start_date ASC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [rows] = await pool.query(dataQuery, [
+      ...queryParams,
+      Number(limit),
+      offset,
+    ]);
+
+    // Return results with pagination metadata
+    res.json({
+      data: rows,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalRecords / Number(limit)),
+        totalRecords,
+        recordsPerPage: Number(limit),
+      },
+    });
+  } catch (err) {
+    console.error("Search API error:", err);
+    res.status(500).json({
+      error: "Failed to search hackathons",
+      message: err.message,
+    });
+  }
+});
+
+// Get filter options (for populating filter dropdowns)
+app.get("/api/filters", async (req, res) => {
+  try {
+    // Get distinct states
+    const [states] = await pool.query(
+      `SELECT DISTINCT state_region 
+       FROM venues 
+       WHERE state_region IS NOT NULL 
+       ORDER BY state_region`
+    );
+
+    // Get distinct countries
+    const [countries] = await pool.query(
+      `SELECT DISTINCT country 
+       FROM venues 
+       WHERE country IS NOT NULL 
+       ORDER BY country`
+    );
+
+    // Get distinct cities
+    const [cities] = await pool.query(
+      `SELECT DISTINCT city 
+       FROM venues 
+       WHERE city IS NOT NULL 
+       ORDER BY city`
+    );
+
+    res.json({
+      states: states.map((row) => row.state_region),
+      countries: countries.map((row) => row.country),
+      cities: cities.map((row) => row.city),
+    });
+  } catch (err) {
+    console.error("Filters API error:", err);
+    res.status(500).json({
+      error: "Failed to fetch filter options",
+      message: err.message,
+    });
   }
 });
 
 // Hackathons filtered by state
-app.get('/api/hackathons/state/:state', async (req, res) => {
+app.get("/api/hackathons/state/:state", async (req, res) => {
   const { state } = req.params;
   try {
     const [rows] = await pool.query(
@@ -76,8 +250,8 @@ app.get('/api/hackathons/state/:state', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching hackathons by state:', err);
-    res.status(500).json({ error: 'Failed to fetch hackathons by state' });
+    console.error("Error fetching hackathons by state:", err);
+    res.status(500).json({ error: "Failed to fetch hackathons by state" });
   }
 });
 
