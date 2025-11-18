@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
+import useAuth from "@/hooks/useAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,7 +44,13 @@ export default function Login() {
         return;
       }
 
-      // For demo: just redirect to dashboard on success
+      // Save login info to localStorage + state
+      login({
+        user_id: data.user_id,
+        email: data.email,
+      });
+
+      // Redirect to dashboard
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
