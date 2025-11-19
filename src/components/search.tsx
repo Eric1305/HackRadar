@@ -129,17 +129,10 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
   const activeFilterCount = Object.values(selectedFilters).flat().length;
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">HackRadar</h1>
-          <p className="text-gray-400">
-            Search and discover hackathons near you ({totalRecords} found)
-          </p>
-        </div>
-
+    <div className="flex justify-center">
+      <div>
         {/* Search Bar */}
-        <div className="dark bg-black p-4 rounded-2xl shadow-sm mb-6 border border-gray-800">
+        <div className="dark bg-black p-4 rounded-2xl shadow-sm mb-2 border border-gray-800 w-[660px]">
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -148,7 +141,7 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search hackathons by name or location..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#62ed05] focus:border-transparent placeholder-gray-500"
               />
             </div>
 
@@ -158,14 +151,14 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
                   showFilters || activeFilterCount > 0
-                    ? "bg-blue-600 text-white border-blue-600"
+                    ? "bg-[#43a600] text-white border-[#43a600]"
                     : "bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-800"
                 }`}
               >
                 <Filter className="w-5 h-5" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  <span className="bg-[#62ed05] text-white text-xs font-semibold px-2 py-0.5 rounded-full">
                     {activeFilterCount}
                   </span>
                 )}
@@ -187,7 +180,7 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
                       {activeFilterCount > 0 && (
                         <button
                           onClick={clearFilters}
-                          className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+                          className="text-sm text-[#43a600] hover:text-[#62ed05] font-medium"
                         >
                           Clear all
                         </button>
@@ -215,7 +208,7 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
                                 onChange={() =>
                                   handleFilterChange("state", state)
                                 }
-                                className="w-4 h-4 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-[#43a600] bg-gray-800 border-gray-600 rounded focus:ring-[#43a600]"
                               />
                               <span className="text-sm text-gray-300">
                                 {state}
@@ -293,17 +286,17 @@ const SearchFilterUI: React.FC<SearchFilterUIProps> = ({
 
         {/* Active Filters Tags */}
         {activeFilterCount > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
             {Object.entries(selectedFilters).map(([groupId, values]) =>
               values.map((value) => (
                 <span
                   key={`${groupId}-${value}`}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded-full"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-[#43a600] text-white text-sm rounded-full"
                 >
                   {value}
                   <button
                     onClick={() => handleFilterChange(groupId, value)}
-                    className="hover:bg-blue-700 rounded-full p-0.5"
+                    className="hover:bg-[#62ed05] rounded-full p-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>

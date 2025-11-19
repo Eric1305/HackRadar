@@ -29,7 +29,7 @@ export default function HackathonTable({
   loading = false,
 }: HackathonTableProps) {
   return (
-    <div className="dark bg-black p-5 rounded-2xl min-h-[400px]">
+    <div className="dark bg-black p-5 w-[660px] rounded-2xl  border shadow-sm border-gray-800 ">
       <Table>
         <TableCaption>
           {loading
@@ -69,16 +69,16 @@ export default function HackathonTable({
                 <TableCell className="text-center text-white">
                   <FavoriteButton hackathon={hackathon} />
                 </TableCell>
-                <TableCell className="font-medium text-white">
+                <TableCell className="font-medium text-white w-[300px]">
                   {hackathon.name}
                 </TableCell>
-                <TableCell className="text-white">
+                <TableCell className="text-white w-[100px]">
                   {hackathon.state_region ? hackathon.state_region : "Virtual"}
                 </TableCell>
-                <TableCell className="text-white">
+                <TableCell className="text-white w-[100px]">
                   {hackathon.start_date.slice(0, 10)}
                 </TableCell>
-                <TableCell className="text-right text-white">
+                <TableCell className=" text-white">
                   {hackathon.end_date.slice(0, 10)}
                 </TableCell>
               </TableRow>
