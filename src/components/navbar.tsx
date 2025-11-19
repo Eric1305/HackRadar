@@ -21,6 +21,9 @@ export default function NavBar() {
         <Link to="/dashboard">
           <Button className="cursor-pointer">Dashboard</Button>
         </Link>
+        <Link to="/starred">
+          <Button className="cursor-pointer">Starred</Button>
+        </Link>
 
         {/* Not logged in → show Login */}
         {!user && (
