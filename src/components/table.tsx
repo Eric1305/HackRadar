@@ -1,4 +1,5 @@
 import "@/index.css";
+import FavoriteButton from "./fav_btn";
 import {
   Table,
   TableBody,
@@ -37,6 +38,9 @@ export default function HackathonTable({
         </TableCaption>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[40px] text-center" aria-hidden>
+              ★
+            </TableHead>
             <TableHead className="w-[100px]">Hackathon</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Start Date</TableHead>
@@ -62,6 +66,9 @@ export default function HackathonTable({
           ) : (
             data.map((hackathon) => (
               <TableRow key={hackathon.hackathon_id || hackathon.id}>
+                <TableCell className="text-center text-white">
+                  <FavoriteButton hackathon={hackathon} />
+                </TableCell>
                 <TableCell className="font-medium text-white">
                   {hackathon.name}
                 </TableCell>
