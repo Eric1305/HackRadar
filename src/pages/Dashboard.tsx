@@ -24,7 +24,7 @@ export default function Dashboard() {
   return (
     <section>
       <NavBar />
-      <div className="pt-60">
+      <div className="mt-12">
         <SearchFilterUI
           onResultsChange={setHackathons}
           onLoadingChange={setLoading}
